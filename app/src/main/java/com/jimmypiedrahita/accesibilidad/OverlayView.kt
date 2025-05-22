@@ -2,7 +2,7 @@ package com.jimmypiedrahita.accesibilidad
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import android.view.View
 
@@ -17,6 +17,12 @@ class OverlayView(context: Context) : View(context) {
             updatePaintColor()
             invalidate()
         }
+    var filterColor: Int = AndroidColor.rgb(128, 128, 128)
+        set(value) {
+            field = value
+            updatePaintColor()
+            invalidate()
+        }
 
     init {
         updatePaintColor()
@@ -25,7 +31,12 @@ class OverlayView(context: Context) : View(context) {
     private fun updatePaintColor() {
         // Calculates alpha based on intensity (0-255)
         val alpha = (intensity * 2.55).toInt()
-        paint.color = Color.argb(alpha, 128, 128, 128)
+        paint.color = AndroidColor.argb(
+            alpha,
+            AndroidColor.red(filterColor),
+            AndroidColor.green(filterColor),
+            AndroidColor.blue(filterColor)
+        )
     }
 
     override fun onDraw(canvas: Canvas) {

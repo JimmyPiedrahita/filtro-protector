@@ -5,6 +5,8 @@ import android.graphics.PixelFormat
 import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.Color as ComposeColor
 
 class BlueLightFilterService : AccessibilityService() {
 
@@ -12,9 +14,14 @@ class BlueLightFilterService : AccessibilityService() {
         private var instance: BlueLightFilterService? = null
         private var isFilterRunning = false
         private var currentIntensity = 50 //Intensity for default
+        const val MAX_INTENSITY = 90 // Max Intensity 90%
+        private var currentColor = AndroidColor.rgb(128, 128, 128) //Color for default
 
         fun isFilterActive(): Boolean = isFilterRunning
         fun getCurrentIntensity(): Int = currentIntensity
+        fun getCurrentColor(): ComposeColor {
+            return ComposeColor(currentColor)
+        }
 
         fun toggleFilter(enable: Boolean){
             if (enable){
@@ -25,8 +32,17 @@ class BlueLightFilterService : AccessibilityService() {
         }
 
         fun setIntensity(intensity: Int) {
-            currentIntensity = intensity.coerceIn(0, 100)
+            currentIntensity = intensity.coerceIn(0, MAX_INTENSITY)
             instance?.updateIntensity(currentIntensity)
+        }
+
+        fun setColor(color: ComposeColor) {
+            currentColor = AndroidColor.rgb(
+                (color.red * 255).toInt(),
+                (color.green * 255).toInt(),
+                (color.blue * 255).toInt()
+            )
+            instance?.updateFilter()
         }
     }
 
@@ -53,6 +69,13 @@ class BlueLightFilterService : AccessibilityService() {
                 windowManager?.addView(this, params)
             }
             isFilterRunning = true
+        }
+    }
+
+    fun updateFilter() {
+        overlayView?.let {
+            it.intensity = currentIntensity
+            it.filterColor = currentColor
         }
     }
 

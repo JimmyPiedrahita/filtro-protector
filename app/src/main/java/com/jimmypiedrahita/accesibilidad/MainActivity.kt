@@ -3,12 +3,18 @@ package com.jimmypiedrahita.accesibilidad
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
 import android.provider.Settings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.graphics.Color as AndroidColor
+import androidx.core.graphics.toColorInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +44,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun FilterControlScreen() {
     val context = LocalContext.current
+
     val (isAccessibilityEnabled, setAccessibilityEnabled) = remember {
         mutableStateOf(isAccessibilityServiceEnabled(context))
     }
@@ -47,6 +56,12 @@ fun FilterControlScreen() {
         mutableIntStateOf(BlueLightFilterService.getCurrentIntensity())
     }
 
+    val (currentColor, setCurrentColor) = remember {
+        mutableStateOf(BlueLightFilterService.getCurrentColor())
+    }
+
+    val (showColorPicker, setShowColorPicker) = remember { mutableStateOf(false) }
+
     // Check the status each time the screen gains focus.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -54,6 +69,8 @@ fun FilterControlScreen() {
             if (event == Lifecycle.Event.ON_RESUME) {
                 setAccessibilityEnabled(isAccessibilityServiceEnabled(context))
                 setFilterActive(BlueLightFilterService.isFilterActive())
+                setIntensity(BlueLightFilterService.getCurrentIntensity())
+                setCurrentColor(BlueLightFilterService.getCurrentColor())
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -93,6 +110,19 @@ fun FilterControlScreen() {
             Text("Filter Active", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
 
+            // Displays the current color
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(currentColor, CircleShape)
+                    .border(2.dp, Color.White, CircleShape)
+                    .clickable { setShowColorPicker(true) }
+                    .align(Alignment.CenterHorizontally)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text("Tap to change color", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(16.dp))
+
             // Intensity slider
             Text("Intensity: $intensity%")
             Spacer(Modifier.height(8.dp))
@@ -116,6 +146,94 @@ fun FilterControlScreen() {
                 Text("Deactivate Filter")
             }
         }
+    }
+
+    // Color Picker Dialog
+    if (showColorPicker) {
+        AlertDialog(
+            onDismissRequest = { setShowColorPicker(false) },
+            title = { Text("Select Filter Color") },
+            text = {
+                // Basic Color Picker implementation
+                Column {
+                    // Predefined color palette
+                    val colors = listOf(
+                        "#FFBF80".toColorInt(),
+                        "#990000".toColorInt(),
+                        "#FFD966".toColorInt(),
+                        "#A67C52".toColorInt(),
+                        "#335533".toColorInt()
+                    )
+
+                    LazyRow {
+                        items(colors.size) { index ->
+                            val color = colors[index]
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .padding(4.dp)
+                                    .background(Color(color), CircleShape)
+                                    .clickable {
+                                        val composeColor = Color(color)
+                                        setCurrentColor(composeColor)
+                                        BlueLightFilterService.setColor(composeColor)
+                                        setShowColorPicker(false)
+                                    }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Advanced HSV Selector
+                    var hue by remember { mutableFloatStateOf(0f) }
+                    var saturation by remember { mutableFloatStateOf(1f) }
+                    var value by remember { mutableFloatStateOf(1f) }
+
+                    Text("Custom Color", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    Slider(
+                        value = hue,
+                        onValueChange = { hue = it },
+                        valueRange = 0f..360f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.hsv(hue, saturation, value),
+                            activeTrackColor = Color.hsv(hue, saturation, value)
+                        )
+                    )
+
+                    Slider(
+                        value = saturation,
+                        onValueChange = { saturation = it },
+                        valueRange = 0f..1f
+                    )
+
+                    Slider(
+                        value = value,
+                        onValueChange = { value = it },
+                        valueRange = 0f..1f
+                    )
+
+                    Button(
+                        onClick = {
+                            val newColor = Color.hsv(hue, saturation, value)
+                            setCurrentColor(newColor)
+                            BlueLightFilterService.setColor(newColor)
+                            setShowColorPicker(false)
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text("Apply Custom Color")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { setShowColorPicker(false) }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

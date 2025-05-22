@@ -15,6 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,10 +36,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun FilterControlScreen() {
     val context = LocalContext.current
-    val isEnabled = remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
+    val (isAccessibilityEnabled, setAccessibilityEnabled) = remember {
+        mutableStateOf(isAccessibilityServiceEnabled(context))
+    }
+    val (isFilterActive, setFilterActive) = remember {
+        mutableStateOf(BlueLightFilterService.isFilterActive())
+    }
 
-    LaunchedEffect(isEnabled.value) {
-        isEnabled.value = isAccessibilityServiceEnabled(context)
+    // Check the status each time the screen gains focus.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                setAccessibilityEnabled(isAccessibilityServiceEnabled(context))
+                setFilterActive(BlueLightFilterService.isFilterActive())
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Column(
@@ -46,22 +65,34 @@ fun FilterControlScreen() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (isEnabled.value) {
-            Text("Activated filter", style = MaterialTheme.typography.headlineSmall)
+        if (!isAccessibilityEnabled) {
+            // State 1: Accessibility permit not granted
+            Text("Blue Light Filter", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
-            Button(onClick = {
-                BlueLightFilterService.stopFilter()
-                isEnabled.value = false //Update UI immediately
-            }) {
-                Text("Deactivate filter")
-            }
-        } else {
-            Text("Blue light filter", style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(16.dp))
-            Text("You need to enable the accessibility permission")
+            Text("Please enable accessibility permission to continue")
             Spacer(Modifier.height(24.dp))
             Button(onClick = { openAccessibilitySettings(context) }) {
-                Text("Activate service")
+                Text("Enable Accessibility")
+            }
+        } else if (!isFilterActive) {
+            // State 2: Permission granted but filter inactive
+            Text("Ready to Filter", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = {
+                BlueLightFilterService.toggleFilter(true)
+                setFilterActive(true)
+            }) {
+                Text("Activate Filter")
+            }
+        } else {
+            // State 3: Active filter
+            Text("Filter Active", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = {
+                BlueLightFilterService.toggleFilter(false)
+                setFilterActive(false)
+            }) {
+                Text("Deactivate Filter")
             }
         }
     }

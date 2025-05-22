@@ -10,10 +10,16 @@ class BlueLightFilterService : AccessibilityService() {
 
     companion object {
         private var instance: BlueLightFilterService? = null
+        private var isFilterRunning = false
 
-        fun stopFilter() {
-            instance?.disableOverlay()
-            instance?.disableSelf() //Especial method for accessible services
+        fun isFilterActive(): Boolean = isFilterRunning
+
+        fun toggleFilter(enable: Boolean){
+            if (enable){
+                instance?.enableFilter()
+            } else {
+                instance?.disableFilter()
+            }
         }
     }
 
@@ -23,43 +29,44 @@ class BlueLightFilterService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        setupOverlay()
     }
 
-    fun disableOverlay() {
+    fun enableFilter() {
+        if (overlayView == null) {
+            overlayView = OverlayView(this).apply {
+                val params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+                )
+                windowManager?.addView(this, params)
+            }
+            isFilterRunning = true
+        }
+    }
+
+    fun disableFilter() {
         try {
             overlayView?.let { view ->
                 windowManager?.removeView(view)
             }
         } catch (e: IllegalArgumentException) {
-            Log.e("overlay",e.message.toString())
-            } finally {
+            Log.e("Overlay", "View already removed: ${e.message}")
+        } finally {
             overlayView = null
+            isFilterRunning = false
         }
     }
 
-    private fun setupOverlay() {
-        overlayView = OverlayView(this)
-
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT
-        )
-
-        windowManager?.addView(overlayView, params)
-    }
-
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-
     override fun onInterrupt() {}
 
     override fun onDestroy() {
-        disableOverlay()
+        disableFilter()
         instance = null
         super.onDestroy()
     }

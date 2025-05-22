@@ -24,15 +24,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import android.graphics.Color as AndroidColor
 import androidx.core.graphics.toColorInt
+import com.jimmypiedrahita.accesibilidad.ui.theme.AccesibilidadTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            AccesibilidadTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     FilterControlScreen()
                 }

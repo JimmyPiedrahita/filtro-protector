@@ -11,8 +11,10 @@ class BlueLightFilterService : AccessibilityService() {
     companion object {
         private var instance: BlueLightFilterService? = null
         private var isFilterRunning = false
+        private var currentIntensity = 50 //Intensity for default
 
         fun isFilterActive(): Boolean = isFilterRunning
+        fun getCurrentIntensity(): Int = currentIntensity
 
         fun toggleFilter(enable: Boolean){
             if (enable){
@@ -20,6 +22,11 @@ class BlueLightFilterService : AccessibilityService() {
             } else {
                 instance?.disableFilter()
             }
+        }
+
+        fun setIntensity(intensity: Int) {
+            currentIntensity = intensity.coerceIn(0, 100)
+            instance?.updateIntensity(currentIntensity)
         }
     }
 
@@ -47,6 +54,10 @@ class BlueLightFilterService : AccessibilityService() {
             }
             isFilterRunning = true
         }
+    }
+
+    fun updateIntensity(intensity: Int) {
+        overlayView?.intensity = intensity
     }
 
     fun disableFilter() {

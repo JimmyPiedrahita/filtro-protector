@@ -43,6 +43,10 @@ fun FilterControlScreen() {
         mutableStateOf(BlueLightFilterService.isFilterActive())
     }
 
+    val (intensity, setIntensity) = remember {
+        mutableIntStateOf(BlueLightFilterService.getCurrentIntensity())
+    }
+
     // Check the status each time the screen gains focus.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -88,6 +92,23 @@ fun FilterControlScreen() {
             // State 3: Active filter
             Text("Filter Active", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
+
+            // Intensity slider
+            Text("Intensity: $intensity%")
+            Spacer(Modifier.height(8.dp))
+            Slider(
+                value = intensity.toFloat(),
+                onValueChange = { newValue ->
+                    val newIntensity = newValue.toInt()
+                    setIntensity(newIntensity)
+                    BlueLightFilterService.setIntensity(newIntensity)
+                },
+                valueRange = 0f..100f,
+                steps = 9,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+
+            Spacer(Modifier.height(24.dp))
             Button(onClick = {
                 BlueLightFilterService.toggleFilter(false)
                 setFilterActive(false)

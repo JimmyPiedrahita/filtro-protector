@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Accesibilidad</string>
+    <string name="filter_service_name">Filtro de Pantalla</string>
+    <string name="filter_service_description">Aplica un filtro de color para reducir la luz azul</string>
+</resources>

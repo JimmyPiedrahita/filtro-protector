@@ -34,7 +34,10 @@ class MainActivity : ComponentActivity() {
 fun FilterControlScreen() {
     val context = LocalContext.current
     val isEnabled = remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
-    val serviceIntent = remember { Intent(context, BlueLightFilterService::class.java) }
+
+    LaunchedEffect(isEnabled.value) {
+        isEnabled.value = isAccessibilityServiceEnabled(context)
+    }
 
     Column(
         modifier = Modifier
@@ -47,7 +50,9 @@ fun FilterControlScreen() {
             Text("Activated filter", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
             Button(onClick = {
-                context.stopService(serviceIntent) }) {
+                BlueLightFilterService.stopFilter()
+                isEnabled.value = false //Update UI immediately
+            }) {
                 Text("Deactivate filter")
             }
         } else {

@@ -3,4 +3,6 @@
     android:description="@string/filter_service_description"
     android:accessibilityFlags="flagDefault"
     android:canRequestFilterKeyEvents="true"
-    android:settingsActivity="com.jimmypiedrahita.accesibilidad.MainActivity" />
+    android:settingsActivity="com.jimmypiedrahita.accesibilidad.MainActivity"
+    android:canControlMagnification="true"
+    android:canPerformGestures="true"/>

@@ -14,7 +14,7 @@ class BlueLightFilterService : AccessibilityService() {
         private var instance: BlueLightFilterService? = null
         private var isFilterRunning = false
         private var currentIntensity = 50 //Intensity for default
-        const val MAX_INTENSITY = 90 // Max Intensity 90%
+        private const val MAX_INTENSITY = 90 // Max Intensity 90%
         private var currentColor = AndroidColor.rgb(128, 128, 128) //Color for default
 
         fun isFilterActive(): Boolean = isFilterRunning

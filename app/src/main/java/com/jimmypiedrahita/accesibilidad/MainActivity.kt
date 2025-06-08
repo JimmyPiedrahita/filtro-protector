@@ -158,11 +158,11 @@ fun FilterControlScreen() {
                 Column {
                     // Predefined color palette
                     val colors = listOf(
-                        "#FFBF80".toColorInt(),
-                        "#990000".toColorInt(),
-                        "#FFD966".toColorInt(),
-                        "#A67C52".toColorInt(),
-                        "#335533".toColorInt()
+                        "#000000".toColorInt(),
+                        "#241e00".toColorInt(),
+                        "#042400".toColorInt(),
+                        "#241000".toColorInt(),
+                        "#2e1d00".toColorInt()
                     )
 
                     LazyRow {

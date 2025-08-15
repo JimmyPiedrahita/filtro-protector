@@ -17,7 +17,7 @@ class OverlayView(context: Context) : View(context) {
             updatePaintColor()
             invalidate()
         }
-    var filterColor: Int = AndroidColor.rgb(128, 128, 128)
+    var filterColor: Int = AndroidColor.rgb(36, 30, 0) // Color por defecto #241e00
         set(value) {
             field = value
             updatePaintColor()

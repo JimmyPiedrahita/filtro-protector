@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Accesibilidad</string>
+    <string name="app_name">Screen Filter</string>
     <string name="filter_service_name">screen filter</string>
     <string name="filter_service_description">Applies a color filter to reduce blue light</string>
 </resources>

@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
+import android.graphics.Color as AndroidColor
 import android.provider.Settings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -189,42 +190,98 @@ fun FilterControlScreen() {
                     var hue by remember { mutableFloatStateOf(0f) }
                     var saturation by remember { mutableFloatStateOf(1f) }
                     var value by remember { mutableFloatStateOf(1f) }
+                    
+                    // Inicializar los valores HSV basándose en el color actual
+                    LaunchedEffect(currentColor) {
+                        val hsv = FloatArray(3)
+                        val androidColor = AndroidColor.valueOf(
+                            currentColor.red,
+                            currentColor.green,
+                            currentColor.blue
+                        )
+                        AndroidColor.colorToHSV(androidColor.toArgb(), hsv)
+                        hue = hsv[0]
+                        saturation = hsv[1]
+                        value = hsv[2]
+                    }
+
+                    // Variable para el color actual del selector
+                    val previewColor = Color.hsv(hue, saturation, value)
+
+                    // Función para aplicar cambios en tiempo real
+                    val applyColorChange = { newColor: Color ->
+                        setCurrentColor(newColor)
+                        BlueLightFilterService.setColor(newColor)
+                    }
 
                     Text("Custom Color", style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(8.dp))
 
+                    // Preview del color actual
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(previewColor, CircleShape)
+                            .border(1.dp, Color.Gray, CircleShape)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    Text("Hue (Tono)", style = MaterialTheme.typography.bodySmall)
                     Slider(
                         value = hue,
-                        onValueChange = { hue = it },
+                        onValueChange = { newHue ->
+                            hue = newHue
+                            val newColor = Color.hsv(hue, saturation, value)
+                            applyColorChange(newColor)
+                        },
                         valueRange = 0f..360f,
                         colors = SliderDefaults.colors(
-                            thumbColor = Color.hsv(hue, saturation, value),
-                            activeTrackColor = Color.hsv(hue, saturation, value)
+                            thumbColor = previewColor,
+                            activeTrackColor = previewColor
                         )
                     )
 
+                    Text("Saturation (Saturación)", style = MaterialTheme.typography.bodySmall)
                     Slider(
                         value = saturation,
-                        onValueChange = { saturation = it },
-                        valueRange = 0f..1f
+                        onValueChange = { newSaturation ->
+                            saturation = newSaturation
+                            val newColor = Color.hsv(hue, saturation, value)
+                            applyColorChange(newColor)
+                        },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = previewColor,
+                            activeTrackColor = previewColor
+                        )
                     )
 
+                    Text("Value (Brillo)", style = MaterialTheme.typography.bodySmall)
                     Slider(
                         value = value,
-                        onValueChange = { value = it },
-                        valueRange = 0f..1f
+                        onValueChange = { newValue ->
+                            value = newValue
+                            val newColor = Color.hsv(hue, saturation, value)
+                            applyColorChange(newColor)
+                        },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = previewColor,
+                            activeTrackColor = previewColor
+                        )
                     )
 
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // Botón para aplicar y cerrar
                     Button(
                         onClick = {
-                            val newColor = Color.hsv(hue, saturation, value)
-                            setCurrentColor(newColor)
-                            BlueLightFilterService.setColor(newColor)
                             setShowColorPicker(false)
                         },
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
-                        Text("Apply Custom Color")
+                        Text("Apply Color")
                     }
                 }
             },

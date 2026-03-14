@@ -24,6 +24,11 @@ class BlueLightFilterService : AccessibilityService() {
         }
 
         fun toggleFilter(enable: Boolean){
+            if (instance == null) {
+                if (!enable) isFilterRunning = false
+                return
+            }
+
             if (enable){
                 instance?.enableFilter()
             } else {
@@ -52,11 +57,16 @@ class BlueLightFilterService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        // If the filter was supposed to be running (e.g. after a crash/restart), restore it
+        if (isFilterRunning) {
+            enableFilter()
+        }
     }
 
     fun enableFilter() {
         if (overlayView == null) {
-            overlayView = OverlayView(this).apply {
+            try {
+                val newOverlay = OverlayView(this)
                 val params = WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
@@ -66,9 +76,19 @@ class BlueLightFilterService : AccessibilityService() {
                             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
                 )
-                windowManager?.addView(this, params)
+                
+                // Initialize with current saved state
+                newOverlay.intensity = currentIntensity
+                newOverlay.filterColor = currentColor
+                
+                windowManager?.addView(newOverlay, params)
+                overlayView = newOverlay
+                isFilterRunning = true
+            } catch (e: Exception) {
+                Log.e("BlueLightFilterService", "Error enabling filter", e)
+                overlayView = null
+                isFilterRunning = false
             }
-            isFilterRunning = true
         }
     }
 
@@ -88,8 +108,8 @@ class BlueLightFilterService : AccessibilityService() {
             overlayView?.let { view ->
                 windowManager?.removeView(view)
             }
-        } catch (e: IllegalArgumentException) {
-            Log.e("Overlay", "View already removed: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("Overlay", "View already removed or error removing: ${e.message}")
         } finally {
             overlayView = null
             isFilterRunning = false
@@ -97,11 +117,14 @@ class BlueLightFilterService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-    override fun onInterrupt() {}
+    
+    override fun onInterrupt() {
+        disableFilter()
+    }
 
     override fun onDestroy() {
+        super.onDestroy()
         disableFilter()
         instance = null
-        super.onDestroy()
     }
 }
